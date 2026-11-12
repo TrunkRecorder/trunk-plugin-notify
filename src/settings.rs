@@ -65,16 +65,26 @@ pub struct Rule {
     /// any tone of the kinds above. (Tones heard and named are signals: "A signal is heard".)
     #[schemars(extend("x-tones" = true, "x-when" = { "event": "tone" }))]
     pub tones: Vec<ToneSpec>,
-    /// Talkgroups
+    /// Only these talkgroups
     ///
     /// Numbers, ranges (1000-1099) and patterns (507*). Empty: any.
     #[serde(deserialize_with = "patterns")]
     pub talkgroups: Vec<String>,
-    /// Radios
+    /// Not these talkgroups
+    ///
+    /// Never these, even when listed above: numbers, ranges and patterns.
+    #[serde(deserialize_with = "patterns")]
+    pub exclude_talkgroups: Vec<String>,
+    /// Only these radios
     ///
     /// Radio IDs: numbers, ranges and patterns. Empty: any.
     #[serde(deserialize_with = "patterns")]
     pub units: Vec<String>,
+    /// Not these radios
+    ///
+    /// Never these radio IDs, even when listed above.
+    #[serde(deserialize_with = "patterns")]
+    pub exclude_units: Vec<String>,
     /// Encryption
     #[schemars(extend("x-when" = { "event": ["call", "emergency"] }))]
     pub encrypted: Encryption,
@@ -119,7 +129,9 @@ impl Default for Rule {
             patterns: Vec::new(),
             tones: Vec::new(),
             talkgroups: Vec::new(),
+            exclude_talkgroups: Vec::new(),
             units: Vec::new(),
+            exclude_units: Vec::new(),
             encrypted: Encryption::Either,
             cooldown_s: 60,
             title: String::new(),

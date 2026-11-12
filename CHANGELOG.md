@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.2]
+
+- Rules take exclude lists: **Not these talkgroups** (`excludeTalkgroups`) and **Not these radios**
+  (`excludeUnits`), as numbers, ranges and patterns like the include lists. One listed in both is
+  left out, so `"excludeTalkgroups": ["29008"]` alone is every talkgroup but 29008. The include
+  lists are now titled **Only these talkgroups** and **Only these radios**; their keys are the same.
+
 ## [0.2.1]
 
 - Moved to [TrunkRecorder](https://github.com/TrunkRecorder/trunk-plugin-notify), for the plugin

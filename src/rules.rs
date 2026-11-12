@@ -39,9 +39,11 @@ pub struct Notice {
     pub detail: Value,
 }
 
-/// A list of numbers, ranges (`1000-1099`) and patterns (`507*`) names `v` (an empty one, anything).
-fn listed(list: &[String], v: Option<u32>) -> bool {
-    list.is_empty() || v.is_some_and(|v| list.iter().any(|e| talkgroup_matches(e, v)))
+/// `v` is in the allow list (an empty one: anything) and not in the deny list:
+/// numbers, ranges (`1000-1099`) and patterns (`507*`). Deny wins.
+fn listed(allow: &[String], deny: &[String], v: Option<u32>) -> bool {
+    let named = |list: &[String]| v.is_some_and(|v| list.iter().any(|e| talkgroup_matches(e, v)));
+    (allow.is_empty() || named(allow)) && !named(deny)
 }
 
 /// A rule's signal (`system:ID`, or a bare `ID` for any system's) is one heard on `system`.
@@ -90,8 +92,8 @@ pub fn matches(r: &Rule, n: &Notice) -> bool {
     r.enabled
         && n.event == Some(r.event)
         && (r.systems.is_empty() || r.systems.iter().any(|s| s.eq_ignore_ascii_case(&n.system)))
-        && listed(&r.talkgroups, n.talkgroup)
-        && listed(&r.units, n.unit)
+        && listed(&r.talkgroups, &r.exclude_talkgroups, n.talkgroup)
+        && listed(&r.units, &r.exclude_units, n.unit)
         && (r.signals.is_empty() || n.signals.iter().any(|h| r.signals.iter().any(|w| signal_is(w, &n.system, h))))
         && (r.patterns.is_empty() || r.patterns.iter().any(|p| p.name() == n.kind()))
         && (r.tones.is_empty() || n.event != Some(Event::Tone) || r.tones.iter().any(|t| tone_is(t, n)))
@@ -219,6 +221,26 @@ mod tests {
         let pages = rule(json!({ "name": "p", "event": "tone", "patterns": ["two_tone", "hi_low"] }));
         let tone = Notice { event: Some(Event::Tone), pattern: "hi_low".into(), ..Default::default() };
         assert!(matches(&pages, &tone) && !matches(&pages, &Notice { pattern: "morse".into(), ..tone.clone() }));
+    }
+
+    #[test]
+    fn exclude_lists_win() {
+        // Every talkgroup but one noisy channel.
+        let em = rule(json!({ "name": "em", "event": "emergency", "excludeTalkgroups": ["29008"] }));
+        let alarm =
+            |tg: u32, unit: u32| Notice { event: Some(Event::Emergency), system: "x".into(), talkgroup: Some(tg), unit: Some(unit), ..Default::default() };
+        assert!(matches(&em, &alarm(29007, 1)) && matches(&em, &alarm(65535, 1)));
+        assert!(!matches(&em, &alarm(29008, 1)));
+        // An alarm on no talkgroup isn't excluded.
+        assert!(matches(&em, &Notice { talkgroup: None, ..alarm(0, 1) }));
+        // Both lists: exclude wins; ranges and patterns too.
+        let r = rule(
+            json!({ "name": "r", "event": "emergency", "talkgroups": ["29000-29999"], "excludeTalkgroups": ["2900?"], "excludeUnits": ["1670000-1679999"] }),
+        );
+        assert!(matches(&r, &alarm(29010, 1)));
+        assert!(!matches(&r, &alarm(29005, 1)), "allowed and excluded");
+        assert!(!matches(&r, &alarm(28000, 1)), "not allowed");
+        assert!(!matches(&r, &alarm(29010, 1675303)), "an excluded radio");
     }
 
     #[test]

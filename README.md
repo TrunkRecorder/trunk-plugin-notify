@@ -66,8 +66,10 @@ Every condition a rule sets has to hold; one left empty is any. For "this or tha
 | Signals | `signals` | | `signal`: which, as `system:ID` (an `ID` alone: any system's) |
 | Kinds of tone | `patterns` | | `tone`: `two_tone`, `long`, `hi_low`, `pulsed`, `digits` (DTMF), `knox`, `morse`, `sequence`, `beep` |
 | Tones | `tones` | | `tone`: particular tones, typed in ([below](#tones-typed-in)); empty: any tone of those kinds |
-| Talkgroups | `talkgroups` | | Numbers, ranges (`1000-1099`) and patterns (`507*`) |
-| Radios | `units` | | The same, for radio IDs |
+| Only these talkgroups | `talkgroups` | | Numbers, ranges (`1000-1099`) and patterns (`507*`); empty: any |
+| Not these talkgroups | `excludeTalkgroups` | | The same; one listed in both is left out |
+| Only these radios | `units` | | The same, for radio IDs |
+| Not these radios | `excludeUnits` | | The same; one listed in both is left out |
 | Encryption | `encrypted` | `either` | Calls: `either`, `encrypted` or `clear` |
 | Not again within, s | `cooldownS` | `60` | Once for the same system, talkgroup and signal (or pattern) in this long |
 | Title | `title` | | The headline. Placeholders: `{system}` `{site}` `{talkgroup}` `{alpha_tag}` `{unit}` `{unit_tag}` `{signals}` `{text}` `{rule}` `{event}` |
